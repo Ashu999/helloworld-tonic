@@ -1,6 +1,6 @@
 # Example [tonic-reflection](https://crates.io/crates/tonic-reflection) Crate usage
 
-Trying to get tonic-reflection working with a simple [base example provided by tonic](https://github.com/hyperium/tonic/blob/master/examples/helloworld-tutorial.md).
+tonic-reflection working with a simple [base example provided by tonic](https://github.com/hyperium/tonic/blob/master/examples/helloworld-tutorial.md).
 
 After cloning, Try running some of the following commands:
 
@@ -17,33 +17,22 @@ Run client:
 Now let's try using tonic-reflection:
 
 ```rust
-we have already added reflection_service in our server.rs file, as shown below:
-
-let reflection_service = ReflectionBuilder::configure().build().unwrap();
-Server::builder()
-        .add_service(GreeterServer::new(greeter))
-        .add_service(reflection_service)
-        .serve(addr)
-        .await?;
+we have already added reflection_service in our server.rs file
 ```
 
 ```shell
 Run client (to use tonic-relection, not providing proto file path to client): 
 `grpcurl -plaintext -d '{"name": "Tonic"}' '[::1]:50051' helloworld.Greeter/SayHello`
 
-**Note:** This attempt fails, indicating a potential issue with our configuration that needs investigation.
 ```
 
 Another way of testing tonic-reflection:
 
-```
+```shell
 run below cmd:
 `grpcurl -plaintext [::1]:50051 list``
 
 This command should output something like:
 grpc.reflection.v1alpha.ServerReflection
 helloworld.Greeter
-
-right now it's only giving below o/p:
-grpc.reflection.v1alpha.ServerReflection
 ```
