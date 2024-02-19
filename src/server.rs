@@ -1,44 +1,43 @@
-use tonic::{transport::Server, Request, Response, Status};
+use tonic::transport::Server;
+use tonic::{Request, Response, Status};
 
-use hello_world::greeter_server::{Greeter, GreeterServer};
-use hello_world::{HelloReply, HelloRequest};
-use tonic_reflection::server::Builder as ReflectionBuilder;
-
-pub mod hello_world {
+pub mod proto {
     tonic::include_proto!("helloworld"); // The string specified here must match the proto package name
+    pub(crate) const FILE_DESCRIPTOR_SET: &[u8] =
+        tonic::include_file_descriptor_set!("helloworld_descriptor");
 }
 
 #[derive(Debug, Default)]
 pub struct MyGreeter {}
 
 #[tonic::async_trait]
-impl Greeter for MyGreeter {
+impl proto::greeter_server::Greeter for MyGreeter {
     async fn say_hello(
         &self,
-        request: Request<HelloRequest>, // Accept request of type HelloRequest
-    ) -> Result<Response<HelloReply>, Status> {
-        // Return an instance of type HelloReply
-        println!("Got a request: {:?}", request);
+        request: Request<proto::HelloRequest>,
+    ) -> Result<Response<proto::HelloReply>, Status> {
+        println!("Got a request from {:?}", request.remote_addr());
 
-        let reply = hello_world::HelloReply {
-            message: format!("Hello {}!", request.into_inner().name), // We must use .into_inner() as the fields of gRPC requests and responses are private
+        let reply = proto::HelloReply {
+            message: format!("Hello Reflection {}!", request.into_inner().name),
         };
-
-        Ok(Response::new(reply)) // Send back our formatted greeting
+        Ok(Response::new(reply))
     }
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "[::1]:50051".parse()?;
+    let service = tonic_reflection::server::Builder::configure()
+        .register_encoded_file_descriptor_set(proto::FILE_DESCRIPTOR_SET)
+        .build()
+        .unwrap();
+
+    let addr = "[::1]:50052".parse().unwrap();
     let greeter = MyGreeter::default();
 
-    // Add reflection service to your server
-    let reflection_service = ReflectionBuilder::configure().build().unwrap();
-
     Server::builder()
-        .add_service(GreeterServer::new(greeter))
-        .add_service(reflection_service)
+        .add_service(service)
+        .add_service(proto::greeter_server::GreeterServer::new(greeter))
         .serve(addr)
         .await?;
 
